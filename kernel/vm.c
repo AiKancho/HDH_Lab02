@@ -486,11 +486,29 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
   }
 }
 
+void vmprint_walk(pagetable_t pagetable, int level)
+{
+    for (int i = 0; i < 512; i++) {
+        pte_t pte = pagetable[i];
+        if (pte & PTE_V) { // Chỉ in PTE hợp lệ
+            uint64 pa = PTE2PA(pte);
+            for (int j = 0; j < level; j++) {
+                printf(" ..");
+            }
+            printf("%d: pte 0x%lx pa %p\n", i, pte, (void *)pa);
+            if ((pte & (PTE_R | PTE_W | PTE_X)) == 0) { // Nếu là bảng trang cấp trung gian
+                vmprint_walk((pagetable_t)pa, level + 1);
+            }
+        }
+    }
+}
 
 #ifdef LAB_PGTBL
 void
 vmprint(pagetable_t pagetable) {
-  // your code here
+
+  printf("page table %p\n", pagetable);
+  vmprint_walk(pagetable, 1);
 }
 #endif
 
